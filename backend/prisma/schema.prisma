@@ -1,0 +1,97 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mongodb"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id               String    @id @default(auto()) @map("_id") @db.ObjectId
+  clerkId          String    @unique @map("clerk_id")
+  email            String
+  name             String?
+  imageUrl         String?   @map("image_url")
+
+  // Subscription / payment
+  isPaid           Boolean   @default(false) @map("is_paid")
+  licenseKey       String?   @map("license_key")
+  gumroadSaleId    String?   @map("gumroad_sale_id")
+  subscriptionId   String?   @map("subscription_id")
+  subscriptionStatus String  @default("none") @map("subscription_status") // none | active | cancelled | expired
+  paidAt           DateTime? @map("paid_at")
+  expiresAt        DateTime? @map("expires_at")
+
+  // Credits (in seconds of video)
+  creditsTotal     Int       @default(0) @map("credits_total")     // total seconds granted
+  creditsUsed      Int       @default(0) @map("credits_used")      // seconds consumed
+
+  createdAt        DateTime  @default(now()) @map("created_at")
+  updatedAt        DateTime  @updatedAt @map("updated_at")
+
+  projects Project[]
+}
+
+model Project {
+  id              String   @id @default(auto()) @map("_id") @db.ObjectId
+  userId          String   @map("user_id") @db.ObjectId
+  title           String
+  status          String   @default("uploading") // uploading | processing | ready | failed
+  sourceUrl       String?  @map("source_url")
+  videoPath       String?  @map("video_path")
+  durationSeconds Int?     @map("duration_seconds")
+  errorMessage    String?  @map("error_message")
+  createdAt       DateTime @default(now()) @map("created_at")
+
+  user       User          @relation(fields: [userId], references: [id])
+  transcript Transcript?
+  clips      Clip[]
+}
+
+model Transcript {
+  id             String   @id @default(auto()) @map("_id") @db.ObjectId
+  projectId      String   @unique @map("project_id") @db.ObjectId
+  fullText       String   @map("full_text")
+  wordTimestamps Json     @map("word_timestamps")
+  language       String   @default("en")
+  createdAt      DateTime @default(now()) @map("created_at")
+
+  project Project @relation(fields: [projectId], references: [id])
+}
+
+model Clip {
+  id                String   @id @default(auto()) @map("_id") @db.ObjectId
+  projectId         String   @map("project_id") @db.ObjectId
+  title             String
+  startTime         Float    @map("start_time")
+  endTime           Float    @map("end_time")
+  durationSeconds   Float    @map("duration_seconds")
+  segmentType       String   @map("segment_type")
+  transcriptExcerpt String   @map("transcript_excerpt")
+  confidenceScore   Float    @map("confidence_score")
+  viralScore        Float?   @map("viral_score")
+  scoreBreakdown    Json?    @map("score_breakdown")
+  hooks             Json?
+  caption           String?
+  hashtags          Json?
+  isSelected        Boolean  @default(true) @map("is_selected")
+  exportStatus      String   @default("pending") @map("export_status")
+  outputPath        String?  @map("output_path")
+  createdAt         DateTime @default(now()) @map("created_at")
+
+  project Project  @relation(fields: [projectId], references: [id])
+  exports Export[]
+}
+
+model Export {
+  id            String   @id @default(auto()) @map("_id") @db.ObjectId
+  clipId        String   @map("clip_id") @db.ObjectId
+  format        String   // 9:16 | 1:1 | 16:9
+  captionStyle  String?  @map("caption_style")
+  filePath      String   @map("file_path")
+  fileSizeBytes Int      @map("file_size_bytes")
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  clip Clip @relation(fields: [clipId], references: [id])
+}
