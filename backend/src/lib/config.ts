@@ -23,19 +23,9 @@ function buildDatabaseUrl(): string {
 export const config = {
   port: parseInt(process.env.PORT || '3001', 10),
   databaseUrl: buildDatabaseUrl(),
-  openrouterApiKey: process.env.OPENROUTER_API_KEY!,
-  openrouterBaseUrl: 'https://openrouter.ai/api/v1',
-  // Free model for clip detection / text analysis
-  llmModel: process.env.LLM_MODEL || 'mistralai/mistral-7b-instruct:free',
   frontendUrl: process.env.FRONTEND_URL || 'http://localhost:3000',
   gumroadProductId: process.env.GUMROAD_PRODUCT_ID || '',
   clerkSecretKey: process.env.CLERK_SECRET_KEY || '',
   clerkPublishableKey: process.env.CLERK_PUBLISHABLE_KEY || '',
-  s3: {
-    bucket: process.env.S3_BUCKET || 'content-repurpose',
-    region: process.env.S3_REGION || 'us-east-1',
-    accessKeyId: process.env.S3_ACCESS_KEY_ID,
-    secretAccessKey: process.env.S3_SECRET_ACCESS_KEY,
-    endpoint: process.env.S3_ENDPOINT,
-  },
+  gcsBucket: process.env.GCS_BUCKET || '',
 };

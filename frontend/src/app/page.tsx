@@ -269,7 +269,7 @@ export default function LandingPage() {
           ].map((stat, i) => (
             <div key={i}>
               <div className="text-3xl sm:text-4xl font-black text-foreground">
-                {stat.display || <Counter end={stat.value} suffix={stat.suffix} />}
+                <Counter end={stat.value} suffix={stat.suffix} />
               </div>
               <div className="mt-1 text-sm text-muted">{stat.label}</div>
             </div>

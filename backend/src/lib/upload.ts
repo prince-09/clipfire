@@ -2,6 +2,7 @@ import multer from 'multer';
 import path from 'path';
 import crypto from 'crypto';
 import { MAX_VIDEO_SIZE_BYTES } from './constants.js';
+import { getTempDir } from './storage.js';
 
 const UPLOADS_DIR = path.resolve('uploads');
 
@@ -16,7 +17,8 @@ const ALLOWED_MIMETYPES = [
 
 const storage = multer.diskStorage({
   destination: (_req, _file, cb) => {
-    cb(null, UPLOADS_DIR);
+    // On Cloud Run, upload to /tmp first, then we move to GCS
+    cb(null, getTempDir());
   },
   filename: (_req, file, cb) => {
     const ext = path.extname(file.originalname);

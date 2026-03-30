@@ -31,8 +31,9 @@ export default function ActivatePage() {
       if (data.valid) {
         router.push('/dashboard');
       }
-    } catch (err: any) {
-      setError(err.response?.data?.error || 'Invalid license key. Please try again.');
+    } catch (err: unknown) {
+      const axiosErr = err as { response?: { data?: { error?: string } } };
+      setError(axiosErr.response?.data?.error || 'Invalid license key. Please try again.');
     } finally {
       setLoading(false);
     }

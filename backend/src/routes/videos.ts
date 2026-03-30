@@ -1,10 +1,11 @@
 import { Router, Response } from 'express';
 import { prisma } from '../lib/prisma.js';
-import { upload, UPLOADS_DIR } from '../lib/upload.js';
+import { upload } from '../lib/upload.js';
 import { logger } from '../lib/logger.js';
 import { runPipeline, regenerateClips } from '../services/pipeline.js';
 import { AuthRequest } from '../middleware/auth.js';
 import { MAX_VIDEO_SIZE_BYTES } from '../lib/constants.js';
+import { uploadFile, deleteFile, downloadFile, getTempDir } from '../lib/storage.js';
 import { exec } from 'child_process';
 import { promisify } from 'util';
 import path from 'path';
@@ -65,7 +66,6 @@ router.post('/', upload.single('video'), async (req: AuthRequest, res: Response)
       return;
     }
 
-    // Must have either a file or a YouTube URL
     if (!req.file && !sourceUrl) {
       res.status(400).json({ error: 'Provide a video file or YouTube URL' });
       return;
@@ -74,14 +74,14 @@ router.post('/', upload.single('video'), async (req: AuthRequest, res: Response)
     let videoPath: string | null = null;
     let status = 'uploading';
 
-    // Case 1: Direct file upload
+    // Case 1: Direct file upload — upload to GCS
     if (req.file) {
-      videoPath = req.file.path;
+      const gcsKey = `uploads/${req.file.filename}`;
+      videoPath = await uploadFile(req.file.path, gcsKey);
       status = 'uploaded';
-      logger.info(`File uploaded: ${req.file.originalname} → ${req.file.filename}`);
+      logger.info(`File uploaded: ${req.file.originalname} → ${videoPath}`);
     }
 
-    // Create project in DB
     const project = await prisma.project.create({
       data: {
         userId: req.userId!,
@@ -98,13 +98,12 @@ router.post('/', upload.single('video'), async (req: AuthRequest, res: Response)
     }
 
     // If file was uploaded, get duration
-    if (videoPath) {
+    if (req.file && videoPath) {
       getVideoDuration(project.id, videoPath);
     }
 
     res.status(201).json({ project });
   } catch (err: unknown) {
-    // Multer errors (file too large, wrong type)
     if (err && typeof err === 'object' && 'code' in err) {
       const multerErr = err as { code: string; message: string };
       if (multerErr.code === 'LIMIT_FILE_SIZE') {
@@ -160,14 +159,12 @@ router.post('/:id/process', async (req: AuthRequest, res: Response) => {
       return;
     }
 
-    // Deduct credits upfront
     await prisma.user.update({
       where: { id: req.userId! },
       data: { creditsUsed: { increment: videoDuration } },
     });
   }
 
-  // Start pipeline in background
   runPipeline(project.id).catch((err) => {
     logger.error(`Pipeline failed for ${project.id}:`, err);
   });
@@ -191,14 +188,12 @@ router.post('/:id/regenerate', async (req: AuthRequest, res: Response) => {
     return;
   }
 
-  // Must have an existing transcript
   const transcript = await prisma.transcript.findUnique({ where: { projectId: project.id } });
   if (!transcript) {
     res.status(400).json({ error: 'No transcript found. Run full processing first.' });
     return;
   }
 
-  // Run LLM-only regeneration in background
   regenerateClips(project.id).catch((err) => {
     logger.error(`Regenerate failed for ${project.id}:`, err);
   });
@@ -217,15 +212,27 @@ router.delete('/:id', async (req: AuthRequest, res: Response) => {
     return;
   }
 
-  // Clean up video file
-  if (project.videoPath && fs.existsSync(project.videoPath)) {
-    fs.unlinkSync(project.videoPath);
+  // Clean up video file from storage
+  if (project.videoPath) {
+    await deleteFile(project.videoPath);
   }
 
-  // Delete related records then project (exports → clips → transcript)
-  const clips = await prisma.clip.findMany({ where: { projectId: project.id }, select: { id: true } });
-  if (clips.length > 0) {
-    await prisma.export.deleteMany({ where: { clipId: { in: clips.map(c => c.id) } } });
+  // Clean up export files
+  const clips = await prisma.clip.findMany({
+    where: { projectId: project.id },
+    select: { id: true, outputPath: true, exports: { select: { filePath: true } } },
+  });
+  for (const clip of clips) {
+    if (clip.outputPath) await deleteFile(clip.outputPath);
+    for (const exp of clip.exports) {
+      await deleteFile(exp.filePath);
+    }
+  }
+
+  // Delete DB records
+  const clipIds = clips.map(c => c.id);
+  if (clipIds.length > 0) {
+    await prisma.export.deleteMany({ where: { clipId: { in: clipIds } } });
   }
   await prisma.clip.deleteMany({ where: { projectId: project.id } });
   await prisma.transcript.deleteMany({ where: { projectId: project.id } });
@@ -234,18 +241,22 @@ router.delete('/:id', async (req: AuthRequest, res: Response) => {
   res.json({ message: 'Project deleted' });
 });
 
-// --- Background helpers (fire-and-forget for now, will move to job queue later) ---
+// --- Background helpers ---
 
-async function getVideoDuration(projectId: string, filePath: string) {
+async function getVideoDuration(projectId: string, storedPath: string) {
   try {
+    // Download from GCS to local for ffprobe
+    const localPath = await downloadFile(storedPath);
     const { stdout } = await execAsync(
-      `ffprobe -v error -show_entries format=duration -of csv=p=0 "${filePath}"`
+      `ffprobe -v error -show_entries format=duration -of csv=p=0 "${localPath}"`
     );
     const duration = Math.round(parseFloat(stdout.trim()));
     await prisma.project.update({
       where: { id: projectId },
       data: { durationSeconds: duration },
     });
+    // Clean up local temp if it's different from stored
+    if (localPath !== storedPath && fs.existsSync(localPath)) fs.unlinkSync(localPath);
     logger.info(`Duration detected: ${duration}s for project ${projectId}`);
   } catch (err) {
     logger.error(`Failed to get duration for project ${projectId}`, err);
@@ -260,47 +271,50 @@ async function downloadYouTubeVideo(projectId: string, url: string) {
     });
 
     const filename = `${Date.now()}-${crypto.randomBytes(6).toString('hex')}.mp4`;
-    const outputPath = path.join(UPLOADS_DIR, filename);
+    const tempDir = getTempDir();
+    const tempPath = path.join(tempDir, filename);
 
     logger.info(`Downloading YouTube video: ${url}`);
 
-    // Download at 720p max to keep file sizes small
     await execAsync(
-      `yt-dlp -f "bestvideo[height<=720][ext=mp4]+bestaudio[ext=m4a]/best[height<=720][ext=mp4]/best[height<=720]" --merge-output-format mp4 -o "${outputPath}" "${url}"`,
-      { timeout: 600_000 } // 10 min timeout
+      `yt-dlp -f "bestvideo[height<=720][ext=mp4]+bestaudio[ext=m4a]/best[height<=720][ext=mp4]/best[height<=720]" --merge-output-format mp4 -o "${tempPath}" "${url}"`,
+      { timeout: 600_000 }
     );
 
-    // If file is over 40MB, truncate to fit using ffmpeg
-    const fileSize = fs.statSync(outputPath).size;
+    // Trim if too large
+    const fileSize = fs.statSync(tempPath).size;
     if (fileSize > MAX_VIDEO_SIZE_BYTES) {
-      // Estimate how many seconds fit in 40MB based on current bitrate
       const { stdout: durStr } = await execAsync(
-        `ffprobe -v error -show_entries format=duration -of csv=p=0 "${outputPath}"`
+        `ffprobe -v error -show_entries format=duration -of csv=p=0 "${tempPath}"`
       );
       const fullDuration = parseFloat(durStr.trim());
       const maxDuration = Math.floor(fullDuration * (MAX_VIDEO_SIZE_BYTES / fileSize));
 
-      const trimmedPath = outputPath.replace('.mp4', '-trimmed.mp4');
+      const trimmedPath = tempPath.replace('.mp4', '-trimmed.mp4');
       await execAsync(
-        `ffmpeg -y -i "${outputPath}" -t ${maxDuration} -c copy "${trimmedPath}"`,
+        `ffmpeg -y -i "${tempPath}" -t ${maxDuration} -c copy "${trimmedPath}"`,
         { timeout: 300_000 }
       );
-      fs.unlinkSync(outputPath);
-      fs.renameSync(trimmedPath, outputPath);
-      logger.info(`Trimmed video to ${maxDuration}s to fit 40MB limit`);
+      fs.unlinkSync(tempPath);
+      fs.renameSync(trimmedPath, tempPath);
+      logger.info(`Trimmed video to ${maxDuration}s to fit size limit`);
     }
 
     // Get duration
     const { stdout } = await execAsync(
-      `ffprobe -v error -show_entries format=duration -of csv=p=0 "${outputPath}"`
+      `ffprobe -v error -show_entries format=duration -of csv=p=0 "${tempPath}"`
     );
     const duration = Math.round(parseFloat(stdout.trim()));
+
+    // Upload to GCS
+    const gcsKey = `uploads/${filename}`;
+    const storedPath = await uploadFile(tempPath, gcsKey);
 
     await prisma.project.update({
       where: { id: projectId },
       data: {
         status: 'uploaded',
-        videoPath: outputPath,
+        videoPath: storedPath,
         durationSeconds: duration,
       },
     });

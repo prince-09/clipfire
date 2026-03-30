@@ -21,7 +21,7 @@ const app = express();
 app.set('trust proxy', 1);
 
 app.use(helmet({ crossOriginResourcePolicy: { policy: 'cross-origin' } }));
-app.use(cors({ origin: config.frontendUrl, credentials: true }));
+app.use(cors({ origin: '*' }));
 app.use(express.json());
 app.use(clerkMiddleware());
 
@@ -48,8 +48,10 @@ const strictLimiter = rateLimit({
 
 app.use('/api', globalLimiter);
 
-// Serve uploaded videos and music tracks
-app.use('/uploads', express.static(path.resolve('uploads')));
+// Serve uploaded videos and music tracks (local dev only; GCS uses signed URLs)
+if (!process.env.GCS_BUCKET) {
+  app.use('/uploads', express.static(path.resolve('uploads')));
+}
 app.use('/music', express.static(path.resolve('music')));
 
 // Apply strict limiter to expensive mutation routes

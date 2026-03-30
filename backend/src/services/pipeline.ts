@@ -4,6 +4,8 @@ import { logger } from '../lib/logger.js';
 import { extractAudio, getVideoDuration, cleanupFiles } from './ffmpeg.js';
 import { transcribeAudio } from './whisper.js';
 import { detectClips } from './llm.js';
+import { downloadFile } from '../lib/storage.js';
+import fs from 'fs';
 
 /**
  * Run the full processing pipeline for a project.
@@ -11,6 +13,7 @@ import { detectClips } from './llm.js';
  */
 export async function runPipeline(projectId: string): Promise<void> {
   let audioPath: string | null = null;
+  let localVideoPath: string | null = null;
 
   try {
     const project = await prisma.project.findUnique({ where: { id: projectId } });
@@ -25,11 +28,14 @@ export async function runPipeline(projectId: string): Promise<void> {
       data: { status: 'processing', errorMessage: null },
     });
 
+    // Download video from GCS to local temp for FFmpeg processing
+    localVideoPath = await downloadFile(project.videoPath);
+
     // Step 1: Get video duration (if not already set)
     let duration = project.durationSeconds;
     if (!duration) {
       logger.info(`[Pipeline] Step 1: Getting video duration...`);
-      duration = await getVideoDuration(project.videoPath);
+      duration = await getVideoDuration(localVideoPath);
       await prisma.project.update({
         where: { id: projectId },
         data: { durationSeconds: duration },
@@ -55,7 +61,7 @@ export async function runPipeline(projectId: string): Promise<void> {
     } else {
       // Step 2: Extract audio
       logger.info(`[Pipeline] Step 2: Extracting audio...`);
-      audioPath = await extractAudio(project.videoPath, duration);
+      audioPath = await extractAudio(localVideoPath, duration);
 
       // Step 3: Transcribe with Whisper
       logger.info(`[Pipeline] Step 3: Transcribing with Whisper...`);
@@ -145,8 +151,10 @@ export async function runPipeline(projectId: string): Promise<void> {
 
     throw err;
   } finally {
-    if (audioPath) {
-      cleanupFiles(audioPath);
+    if (audioPath) cleanupFiles(audioPath);
+    // Clean up local temp video downloaded from GCS
+    if (localVideoPath && localVideoPath.startsWith('/tmp') && fs.existsSync(localVideoPath)) {
+      fs.unlinkSync(localVideoPath);
     }
   }
 }
