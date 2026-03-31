@@ -44,8 +44,8 @@ export async function runPipeline(projectId: string): Promise<void> {
       logger.info(`[Pipeline] Step 1: Duration already known (${duration}s), skipping.`);
     }
 
-    // Cap processing to first 6 minutes
-    const MAX_DURATION_SECONDS = 360;
+    // Cap processing to first 60 minutes
+    const MAX_DURATION_SECONDS = 3600;
     if (duration > MAX_DURATION_SECONDS) {
       logger.info(`[Pipeline] Video is ${Math.ceil(duration / 60)} min, capping to first ${MAX_DURATION_SECONDS / 60} min`);
       duration = MAX_DURATION_SECONDS;

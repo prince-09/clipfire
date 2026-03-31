@@ -80,8 +80,8 @@ export default function UploadModal({ open, onClose, onCreated }: UploadModalPro
     // Client-side duration check
     try {
       const duration = await getVideoDuration(file);
-      if (duration > 360) {
-        toast.error(`Video is too long (${Math.ceil(duration / 60)} min). Maximum allowed is 6 minutes.`);
+      if (duration > 3600) {
+        toast.error(`Video is too long (${Math.ceil(duration / 60)} min). Maximum allowed is 60 minutes.`);
         return;
       }
     } catch {
@@ -138,7 +138,7 @@ export default function UploadModal({ open, onClose, onCreated }: UploadModalPro
         {/* Beta notice */}
         <div className="mt-4 flex items-center gap-2 rounded-lg bg-amber-500/8 border border-amber-500/15 px-3 py-2">
           <span className="rounded bg-accent/20 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-accent">Beta</span>
-          <p className="text-xs text-muted">Clipfire is in beta. Max video length is 6 minutes. Longer videos coming soon.</p>
+          <p className="text-xs text-muted">Clipfire is in beta. Max video length is 60 minutes.</p>
         </div>
 
         {/* Title */}
