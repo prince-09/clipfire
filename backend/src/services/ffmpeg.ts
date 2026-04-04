@@ -172,7 +172,7 @@ export async function renderClip(opts: {
 
   // Use output seeking (-ss after -i) for frame-accurate cuts
   await execAsync(
-    `ffmpeg -i "${videoPath}" -ss ${startTime} -t ${duration} -vf "${filterComplex}" -c:v libx264 -preset fast -crf 23 -c:a aac -b:a 128k "${outputPath}" -y`,
+    `ffmpeg -i "${videoPath}" -ss ${startTime} -t ${duration} -vf "${filterComplex}" -c:v libx264 -preset ultrafast -crf 23 -c:a aac -b:a 128k "${outputPath}" -y`,
     { timeout: 300_000 }
   );
 
@@ -345,7 +345,7 @@ export async function burnCaptions(opts: {
   // Burn subtitles using the subtitles filter with fontsdir for reliable font loading
   const escapedAssPath = assPath.replace(/'/g, "'\\''").replace(/:/g, '\\:');
   const escapedFontsDir = FONTS_DIR.replace(/'/g, "'\\''").replace(/:/g, '\\:');
-  const cmd = `ffmpeg -i "${videoPath}" -vf "subtitles='${escapedAssPath}':fontsdir='${escapedFontsDir}'" -c:v libx264 -preset fast -crf 23 -c:a copy "${outputPath}" -y`;
+  const cmd = `ffmpeg -i "${videoPath}" -vf "subtitles='${escapedAssPath}':fontsdir='${escapedFontsDir}'" -c:v libx264 -preset ultrafast -crf 23 -c:a copy "${outputPath}" -y`;
   logger.info(`[DEBUG CAPTIONS] Font: ${resolvedFontName}, fontsdir: ${FONTS_DIR}, cmd: ${cmd}`);
   await execAsync(cmd, { timeout: 300_000 });
 
@@ -408,7 +408,7 @@ export async function burnWatermark(opts: {
   const fontOpt = fs.existsSync(poppinsPath)
     ? `:fontfile='${poppinsPath.replace(/'/g, "'\\''").replace(/:/g, '\\:')}'`
     : '';
-  const cmd = `ffmpeg -i "${videoPath}" -vf "drawtext=text='clipfire'${fontOpt}:fontsize=${fontSize}:fontcolor=white@0.25:shadowcolor=black@0.15:shadowx=1:shadowy=1:x=${x}:y=${y}" -c:v libx264 -preset fast -crf 23 -c:a copy "${outputPath}" -y`;
+  const cmd = `ffmpeg -i "${videoPath}" -vf "drawtext=text='clipfire'${fontOpt}:fontsize=${fontSize}:fontcolor=white@0.25:shadowcolor=black@0.15:shadowx=1:shadowy=1:x=${x}:y=${y}" -c:v libx264 -preset ultrafast -crf 23 -c:a copy "${outputPath}" -y`;
 
   logger.info(`[WATERMARK] Burning watermark`);
   await execAsync(cmd, { timeout: 300_000 });

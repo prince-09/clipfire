@@ -58,7 +58,8 @@ app.use('/music', express.static(path.resolve('music')));
 app.post('/api/projects', strictLimiter);           // Upload / create project
 app.post('/api/projects/:id/process', strictLimiter);    // Triggers AI pipeline
 app.post('/api/projects/:id/regenerate', strictLimiter); // Re-runs LLM only
-app.use('/api/exports', strictLimiter);               // All export renders
+app.post('/api/exports/:id/export', strictLimiter);    // Single export render
+app.post('/api/exports/batch-export', strictLimiter);  // Batch export render
 
 // Auth-only routes (no payment required)
 app.use('/api/license', licenseRoutes);
