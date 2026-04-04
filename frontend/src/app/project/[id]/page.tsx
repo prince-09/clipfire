@@ -14,8 +14,6 @@ import ExportModal from '@/components/ui/export-modal';
 import { AuthGuard } from '@/components/ui/auth-guard';
 import { useAuth } from '@/hooks/use-auth';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
-
 interface ScoreBreakdown {
   hookStrength: number;
   emotionalIntensity: number;
