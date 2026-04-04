@@ -12,7 +12,7 @@ import archiver from 'archiver';
 
 const router = Router();
 
-// Export a single clip
+// Export a single clip (non-blocking — renders in background)
 router.post('/:id/export', validate(exportClipSchema), async (req: Request, res: Response) => {
   const clip = await prisma.clip.findUnique({
     where: { id: req.params.id as string },
@@ -31,31 +31,62 @@ router.post('/:id/export', validate(exportClipSchema), async (req: Request, res:
 
   const { format, captionStyle, captionPosition, captionFont, backgroundMusic, musicVolume } = req.body;
 
-  try {
-    const result = await renderAndSaveExport({
-      clip,
-      videoPath: clip.project.videoPath,
-      projectId: clip.projectId,
-      format,
-      captionStyle,
-      captionPosition,
-      captionFont,
-      backgroundMusic,
-      musicVolume,
-    });
+  // Mark clip as exporting
+  await prisma.clip.update({
+    where: { id: clip.id },
+    data: { exportStatus: 'rendering' },
+  });
 
-    res.json({ export: result });
-  } catch (err: any) {
+  // Return immediately — render in background
+  res.json({ message: 'Export started', clipId: clip.id });
+
+  // Background render
+  renderAndSaveExport({
+    clip,
+    videoPath: clip.project.videoPath,
+    projectId: clip.projectId,
+    format,
+    captionStyle,
+    captionPosition,
+    captionFont,
+    backgroundMusic,
+    musicVolume,
+  }).catch((err: any) => {
     logger.error(`Export failed for clip ${clip.id}:`, err);
-    if (err?.message?.includes('libfreetype')) {
-      res.status(500).json({ error: 'Captions require FFmpeg with libfreetype. Export without captions or reinstall FFmpeg.' });
-    } else {
-      res.status(500).json({ error: 'Export rendering failed' });
-    }
-  }
+    prisma.clip.update({
+      where: { id: clip.id },
+      data: { exportStatus: 'failed' },
+    }).catch(() => {});
+  });
 });
 
-// Batch export selected clips
+// Check export status for a clip
+router.get('/:id/status', async (req: Request, res: Response) => {
+  const clip = await prisma.clip.findUnique({
+    where: { id: req.params.id as string },
+    include: { exports: { orderBy: { createdAt: 'desc' }, take: 1 } },
+  });
+
+  if (!clip) {
+    res.status(404).json({ error: 'Clip not found' });
+    return;
+  }
+
+  const latestExport = clip.exports[0] || null;
+  let downloadUrl: string | null = null;
+  if (latestExport && clip.exportStatus === 'exported') {
+    downloadUrl = await getSignedUrl(latestExport.filePath);
+  }
+
+  res.json({
+    clipId: clip.id,
+    exportStatus: clip.exportStatus,
+    export: latestExport,
+    downloadUrl,
+  });
+});
+
+// Batch export selected clips (non-blocking)
 router.post('/batch-export', validate(batchExportSchema), async (req: Request, res: Response) => {
   const { clipIds, format, captionStyle, captionPosition, captionFont, backgroundMusic, musicVolume } = req.body;
 
@@ -69,30 +100,40 @@ router.post('/batch-export', validate(batchExportSchema), async (req: Request, r
     return;
   }
 
-  const results = [];
+  // Mark all as rendering
+  await prisma.clip.updateMany({
+    where: { id: { in: clipIds } },
+    data: { exportStatus: 'rendering' },
+  });
 
-  for (const clip of clips) {
-    if (!clip.project.videoPath) continue;
+  // Return immediately
+  res.json({ message: 'Batch export started', clipIds });
 
-    try {
-      const result = await renderAndSaveExport({
-        clip,
-        videoPath: clip.project.videoPath,
-        projectId: clip.projectId,
-        format,
-        captionStyle,
-        captionPosition,
-        captionFont,
-        backgroundMusic,
-        musicVolume,
-      });
-      results.push(result);
-    } catch (err) {
-      logger.error(`Batch export failed for clip ${clip.id}:`, err);
+  // Background render sequentially
+  (async () => {
+    for (const clip of clips) {
+      if (!clip.project.videoPath) continue;
+      try {
+        await renderAndSaveExport({
+          clip,
+          videoPath: clip.project.videoPath,
+          projectId: clip.projectId,
+          format,
+          captionStyle,
+          captionPosition,
+          captionFont,
+          backgroundMusic,
+          musicVolume,
+        });
+      } catch (err) {
+        logger.error(`Batch export failed for clip ${clip.id}:`, err);
+        await prisma.clip.update({
+          where: { id: clip.id },
+          data: { exportStatus: 'failed' },
+        }).catch(() => {});
+      }
     }
-  }
-
-  res.json({ exports: results, total: results.length });
+  })();
 });
 
 // Download a single exported file (returns signed URL for GCS)

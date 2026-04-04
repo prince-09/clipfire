@@ -297,13 +297,36 @@ export default function ExportModal({ projectId, clips, videoUrl, initialFormat,
 
   const { width: previewW, height: previewH } = previewDimensions[format];
 
+  const pollExportStatus = async (clipId: string): Promise<void> => {
+    const maxAttempts = 120; // 10 minutes max (5s intervals)
+    for (let i = 0; i < maxAttempts; i++) {
+      await new Promise(r => setTimeout(r, 5000));
+      try {
+        const { data } = await api.get(`/exports/${clipId}/status`);
+        const pct = Math.min(10 + Math.round((i / 40) * 90), 95);
+        setProgress(pct);
+        if (data.exportStatus === 'exported') {
+          setLastExportId(data.export?.id || null);
+          setProgress(100);
+          return;
+        }
+        if (data.exportStatus === 'failed') {
+          throw new Error('Export failed');
+        }
+      } catch {
+        throw new Error('Export failed');
+      }
+    }
+    throw new Error('Export timed out');
+  };
+
   const handleExport = async () => {
     setExporting(true);
-    setProgress(0);
+    setProgress(5);
 
     try {
       if (clips.length === 1) {
-        const res = await api.post(`/exports/${clips[0].id}/export`, {
+        await api.post(`/exports/${clips[0].id}/export`, {
           format,
           captionStyle,
           captionPosition,
@@ -311,8 +334,7 @@ export default function ExportModal({ projectId, clips, videoUrl, initialFormat,
           backgroundMusic,
           musicVolume: backgroundMusic ? musicVolume : 0.12,
         });
-        setLastExportId(res.data.export?.id || null);
-        setProgress(100);
+        await pollExportStatus(clips[0].id);
       } else {
         await api.post('/exports/batch-export', {
           clipIds: clips.map(c => c.id),
@@ -323,8 +345,9 @@ export default function ExportModal({ projectId, clips, videoUrl, initialFormat,
           backgroundMusic,
           musicVolume: backgroundMusic ? musicVolume : 0.12,
         });
+        // Poll the last clip for batch completion
+        await pollExportStatus(clips[clips.length - 1].id);
         setLastExportId(null);
-        setProgress(100);
       }
 
       setDone(true);
