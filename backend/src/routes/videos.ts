@@ -5,7 +5,7 @@ import { logger } from '../lib/logger.js';
 import { runPipeline, regenerateClips } from '../services/pipeline.js';
 import { AuthRequest } from '../middleware/auth.js';
 import { MAX_VIDEO_SIZE_BYTES } from '../lib/constants.js';
-import { uploadFile, deleteFile, downloadFile, getTempDir } from '../lib/storage.js';
+import { uploadFile, deleteFile, downloadFile, getTempDir, getSignedUploadUrl, getSignedUrl, USE_GCS } from '../lib/storage.js';
 import { exec } from 'child_process';
 import { promisify } from 'util';
 import path from 'path';
@@ -52,7 +52,13 @@ router.get('/:id', async (req: AuthRequest, res: Response) => {
     return;
   }
 
-  res.json({ project });
+  // Generate signed URL for video preview
+  let videoUrl: string | null = null;
+  if (project.videoPath) {
+    videoUrl = await getSignedUrl(project.videoPath);
+  }
+
+  res.json({ project: { ...project, videoUrl } });
 });
 
 // Create project — file upload or YouTube URL
@@ -194,6 +200,67 @@ router.post('/:id/regenerate', async (req: AuthRequest, res: Response) => {
   });
 
   res.json({ message: 'Regenerating clips', projectId: project.id });
+});
+
+// Get a signed URL for direct-to-GCS upload (bypasses Cloud Run size limit)
+router.post('/upload-url', async (req: AuthRequest, res: Response) => {
+  const { filename, contentType, title } = req.body;
+
+  if (!filename || !contentType || !title?.trim()) {
+    res.status(400).json({ error: 'filename, contentType, and title are required' });
+    return;
+  }
+
+  const ext = path.extname(filename).toLowerCase();
+  const allowed = ['.mp4', '.mov', '.mkv', '.webm', '.avi'];
+  if (!allowed.includes(ext)) {
+    res.status(400).json({ error: `Unsupported file type. Allowed: ${allowed.join(', ')}` });
+    return;
+  }
+
+  const uniqueName = `${Date.now()}-${crypto.randomBytes(6).toString('hex')}${ext}`;
+  const { url, key } = await getSignedUploadUrl(uniqueName, contentType);
+
+  // Create project record immediately
+  const project = await prisma.project.create({
+    data: {
+      userId: req.userId!,
+      title: title.trim(),
+      status: 'uploading',
+      videoPath: key,
+    },
+  });
+
+  res.json({ uploadUrl: url, key, projectId: project.id });
+});
+
+// Confirm upload is complete (after frontend uploads directly to GCS)
+router.post('/:id/confirm-upload', async (req: AuthRequest, res: Response) => {
+  const project = await prisma.project.findFirst({
+    where: { id: req.params.id as string, userId: req.userId! },
+  });
+
+  if (!project) {
+    res.status(404).json({ error: 'Project not found' });
+    return;
+  }
+
+  if (project.status !== 'uploading') {
+    res.status(400).json({ error: 'Project is not in uploading state' });
+    return;
+  }
+
+  await prisma.project.update({
+    where: { id: project.id },
+    data: { status: 'uploaded' },
+  });
+
+  // Get duration in background
+  if (project.videoPath) {
+    getVideoDuration(project.id, project.videoPath);
+  }
+
+  res.json({ message: 'Upload confirmed', project: { ...project, status: 'uploaded' } });
 });
 
 // Delete project

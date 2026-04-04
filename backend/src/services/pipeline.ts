@@ -116,7 +116,7 @@ export async function runPipeline(projectId: string): Promise<void> {
         hooks: c.hooks as unknown as Prisma.InputJsonValue,
         caption: c.caption,
         hashtags: c.hashtags as unknown as Prisma.InputJsonValue,
-        isSelected: true,
+        isSelected: false,
         exportStatus: 'pending',
       })),
     });
@@ -210,7 +210,7 @@ export async function regenerateClips(projectId: string): Promise<void> {
         hooks: c.hooks as unknown as Prisma.InputJsonValue,
         caption: c.caption,
         hashtags: c.hashtags as unknown as Prisma.InputJsonValue,
-        isSelected: true,
+        isSelected: false,
         exportStatus: 'pending',
       })),
     });

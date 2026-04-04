@@ -4,7 +4,7 @@ import { validate } from '../middleware/validate.js';
 import { exportClipSchema, batchExportSchema } from '../lib/schemas.js';
 import { renderClip, burnCaptions, mixBackgroundMusic, burnWatermark, cleanupFiles } from '../services/ffmpeg.js';
 import { logger } from '../lib/logger.js';
-import { UPLOADS_DIR } from '../lib/upload.js';
+import { downloadFile, uploadFile, getSignedUrl, getTempDir } from '../lib/storage.js';
 import path from 'path';
 import crypto from 'crypto';
 import fs from 'fs';
@@ -95,20 +95,21 @@ router.post('/batch-export', validate(batchExportSchema), async (req: Request, r
   res.json({ exports: results, total: results.length });
 });
 
-// Download a single exported file
+// Download a single exported file (returns signed URL for GCS)
 router.get('/download/:exportId', async (req: Request, res: Response) => {
   const exportRecord = await prisma.export.findUnique({
     where: { id: req.params.exportId as string },
     include: { clip: true },
   });
 
-  if (!exportRecord || !fs.existsSync(exportRecord.filePath)) {
+  if (!exportRecord) {
     res.status(404).json({ error: 'Export not found' });
     return;
   }
 
+  const url = await getSignedUrl(exportRecord.filePath);
   const filename = `${exportRecord.clip.title.replace(/[^a-zA-Z0-9]/g, '_')}_${exportRecord.format.replace(':', 'x')}.mp4`;
-  res.download(exportRecord.filePath, filename);
+  res.json({ url, filename });
 });
 
 // Download all exported clips for a project as ZIP
@@ -118,25 +119,46 @@ router.get('/download-zip/:projectId', async (req: Request, res: Response) => {
     include: { clip: true },
   });
 
-  const validExports = exports.filter(e => fs.existsSync(e.filePath));
-
-  if (validExports.length === 0) {
+  if (exports.length === 0) {
     res.status(404).json({ error: 'No exported clips found' });
+    return;
+  }
+
+  // Download all exports from GCS to temp for zipping
+  const tempDir = getTempDir();
+  const tempFiles: string[] = [];
+  const fileEntries: { localPath: string; filename: string }[] = [];
+
+  for (const exp of exports) {
+    try {
+      const localPath = await downloadFile(exp.filePath, path.join(tempDir, `zip-${crypto.randomBytes(4).toString('hex')}.mp4`));
+      const filename = `${exp.clip.title.replace(/[^a-zA-Z0-9]/g, '_')}_${exp.format.replace(':', 'x')}.mp4`;
+      fileEntries.push({ localPath, filename });
+      if (localPath !== exp.filePath) tempFiles.push(localPath);
+    } catch (err) {
+      logger.warn(`Failed to download export ${exp.id} for zip`, err);
+    }
+  }
+
+  if (fileEntries.length === 0) {
+    res.status(404).json({ error: 'No exported clips available' });
     return;
   }
 
   res.setHeader('Content-Type', 'application/zip');
   res.setHeader('Content-Disposition', 'attachment; filename=clips.zip');
 
-  const archive = archiver('zip', { zlib: { level: 1 } }); // fast compression for video
+  const archive = archiver('zip', { zlib: { level: 1 } });
   archive.pipe(res);
 
-  for (const exp of validExports) {
-    const filename = `${exp.clip.title.replace(/[^a-zA-Z0-9]/g, '_')}_${exp.format.replace(':', 'x')}.mp4`;
-    archive.file(exp.filePath, { name: filename });
+  for (const entry of fileEntries) {
+    archive.file(entry.localPath, { name: entry.filename });
   }
 
   await archive.finalize();
+
+  // Clean up temp files after streaming
+  cleanupFiles(...tempFiles);
 });
 
 // --- Helper ---
@@ -156,26 +178,30 @@ async function renderAndSaveExport(opts: {
 
   logger.info(`[DEBUG EXPORT] clipId=${clip.id}, captionStyle=${JSON.stringify(captionStyle)}, captionPosition=${captionPosition}, format=${format}, music=${backgroundMusic}`);
 
+  // Download source video from GCS to local temp for FFmpeg
+  const localVideoPath = await downloadFile(videoPath);
+
+  const tempDir = getTempDir();
   const baseName = `${Date.now()}-${crypto.randomBytes(4).toString('hex')}`;
-  const tempFiles: string[] = [];
+  const tempFiles: string[] = []; // track intermediate files for cleanup
+  // Also clean up the downloaded source if it's a temp copy
+  if (localVideoPath !== videoPath) tempFiles.push(localVideoPath);
 
   // Pipeline: render → captions → watermark → music → final
-  // Each step gets a unique temp file; only the very last step writes to finalPath.
   const needsCaptions = !!captionStyle;
   const needsMusic = !!backgroundMusic;
 
-  const finalPath = path.join(UPLOADS_DIR, `${baseName}-final.mp4`);
+  const finalLocalPath = path.join(tempDir, `${baseName}-final.mp4`);
   let stepNum = 0;
 
   const nextPath = (isLast: boolean) => {
-    if (isLast) return finalPath;
+    if (isLast) return finalLocalPath;
     stepNum++;
-    const p = path.join(UPLOADS_DIR, `${baseName}-step${stepNum}.mp4`);
+    const p = path.join(tempDir, `${baseName}-step${stepNum}.mp4`);
     tempFiles.push(p);
     return p;
   };
 
-  // Determine which steps remain after each one
   const stepsRemaining = [true, needsCaptions, true /* watermark */, needsMusic].filter(Boolean);
 
   // Step 1: Render clip with crop
@@ -183,7 +209,7 @@ async function renderAndSaveExport(opts: {
 
   logger.info(`[DEBUG EXPORT] Step 1: renderClip → ${currentPath}`);
   await renderClip({
-    videoPath,
+    videoPath: localVideoPath,
     startTime: clip.startTime,
     endTime: clip.endTime,
     format: format as '9:16' | '1:1' | '16:9',
@@ -193,7 +219,6 @@ async function renderAndSaveExport(opts: {
   // Step 2: Burn captions if requested
   if (needsCaptions) {
     const prevPath = currentPath;
-    const isLast = !needsMusic; // watermark still comes next, so not last
     currentPath = nextPath(false);
 
     logger.info(`[DEBUG EXPORT] Step 2: burning captions with style=${captionStyle}`);
@@ -238,7 +263,7 @@ async function renderAndSaveExport(opts: {
   // Step 4: Mix background music if requested
   if (needsMusic) {
     const prevPath = currentPath;
-    currentPath = finalPath;
+    currentPath = finalLocalPath;
 
     logger.info(`[DEBUG EXPORT] Step 3: mixing background music=${backgroundMusic}, volume=${musicVolume}`);
     await mixBackgroundMusic({
@@ -249,10 +274,14 @@ async function renderAndSaveExport(opts: {
     });
   }
 
-  // Clean up intermediate files
+  // Clean up intermediate files (not the final)
   cleanupFiles(...tempFiles);
 
-  const stats = fs.statSync(finalPath);
+  const stats = fs.statSync(finalLocalPath);
+
+  // Upload final export to GCS
+  const gcsKey = `exports/${baseName}-final.mp4`;
+  const storedPath = await uploadFile(finalLocalPath, gcsKey);
 
   // Save export record
   const exportRecord = await prisma.export.create({
@@ -260,7 +289,7 @@ async function renderAndSaveExport(opts: {
       clipId: clip.id,
       format,
       captionStyle: captionStyle || null,
-      filePath: finalPath,
+      filePath: storedPath,
       fileSizeBytes: stats.size,
     },
   });
@@ -268,7 +297,7 @@ async function renderAndSaveExport(opts: {
   // Update clip status
   await prisma.clip.update({
     where: { id: clip.id },
-    data: { exportStatus: 'exported', outputPath: finalPath },
+    data: { exportStatus: 'exported', outputPath: storedPath },
   });
 
   return exportRecord;

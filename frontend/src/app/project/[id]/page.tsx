@@ -48,6 +48,7 @@ interface Project {
   title: string;
   status: string;
   videoPath: string | null;
+  videoUrl: string | null;
   durationSeconds: number | null;
   errorMessage: string | null;
   clips: Clip[];
@@ -428,10 +429,10 @@ export default function ProjectPage() {
                           aspectRatio: previewFormat === 'original' ? '16/9' : undefined,
                         }}
                       >
-                        {project.videoPath && (
+                        {project.videoUrl && (
                           <video
                             ref={videoRef}
-                            src={`${API_URL}/uploads/${project.videoPath.split('/').pop()}`}
+                            src={project.videoUrl}
                             controls
                             className={`bg-black ${previewFormat === 'original' ? 'w-full rounded-xl' : 'absolute inset-0 w-full h-full object-cover'}`}
                             onPause={() => setPlayingClip(null)}

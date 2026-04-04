@@ -95,4 +95,26 @@ export function getTempDir(): string {
   return USE_GCS ? '/tmp' : LOCAL_DIR;
 }
 
+/**
+ * Generate a signed URL for uploading a file directly to GCS.
+ * Returns { url, key } where url is the signed PUT URL and key is the GCS object path.
+ */
+export async function getSignedUploadUrl(filename: string, contentType: string): Promise<{ url: string; key: string }> {
+  const key = `uploads/${filename}`;
+
+  if (!USE_GCS) {
+    // Dev mode: return a dummy — frontend will use regular multipart upload
+    return { url: '', key };
+  }
+
+  const [url] = await bucket!.file(key).getSignedUrl({
+    version: 'v4',
+    action: 'write',
+    expires: Date.now() + 30 * 60 * 1000, // 30 minutes
+    contentType,
+  });
+
+  return { url, key };
+}
+
 export { USE_GCS, GCS_BUCKET };

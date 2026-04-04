@@ -160,11 +160,11 @@ export default function DashboardPage() {
                     href={`/project/${project.id}`}
                     className="group relative rounded-xl border border-border bg-surface p-5 transition-all duration-300 hover:border-border-bright hover:bg-surface-hover hover:shadow-xl hover:shadow-black/20 hover:-translate-y-0.5"
                   >
-                    <div className="flex items-start justify-between">
-                      <h3 className="font-semibold text-foreground group-hover:text-accent-hover transition-colors">
+                    <div className="flex items-start justify-between gap-3">
+                      <h3 className="font-semibold text-foreground group-hover:text-accent-hover transition-colors truncate min-w-0">
                         {project.title}
                       </h3>
-                      <span className={`flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium ${status.bg} ${status.text}`}>
+                      <span className={`flex shrink-0 items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium ${status.bg} ${status.text}`}>
                         <span className={`h-1.5 w-1.5 rounded-full ${status.dot}`} />
                         {project.status}
                       </span>

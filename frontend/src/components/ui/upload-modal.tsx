@@ -92,26 +92,57 @@ export default function UploadModal({ open, onClose, onCreated }: UploadModalPro
     setProgress(0);
 
     try {
-      const formData = new FormData();
-      formData.append('title', trimmedTitle);
-      formData.append('video', file);
-
-      const { data } = await api.post('/projects', formData, {
-        headers: { 'Content-Type': 'multipart/form-data' },
-        onUploadProgress: (e) => {
-          if (e.total) {
-            setProgress(Math.round((e.loaded / e.total) * 100));
-          }
-        },
+      // Step 1: Get signed upload URL from backend
+      const { data: urlData } = await api.post('/projects/upload-url', {
+        filename: file.name,
+        contentType: file.type || 'video/mp4',
+        title: trimmedTitle,
       });
+
+      const { uploadUrl, projectId } = urlData;
+
+      if (uploadUrl) {
+        // Step 2: Upload directly to GCS (bypasses Cloud Run size limit)
+        await new Promise<void>((resolve, reject) => {
+          const xhr = new XMLHttpRequest();
+          xhr.open('PUT', uploadUrl);
+          xhr.setRequestHeader('Content-Type', file.type || 'video/mp4');
+          xhr.upload.onprogress = (e) => {
+            if (e.lengthComputable) {
+              setProgress(Math.round((e.loaded / e.total) * 100));
+            }
+          };
+          xhr.onload = () => xhr.status >= 200 && xhr.status < 300 ? resolve() : reject(new Error(`Upload failed: ${xhr.status}`));
+          xhr.onerror = () => reject(new Error('Upload failed'));
+          xhr.send(file);
+        });
+      } else {
+        // Dev mode: fall back to multipart upload through backend
+        const formData = new FormData();
+        formData.append('title', trimmedTitle);
+        formData.append('video', file);
+        await api.post('/projects', formData, {
+          headers: { 'Content-Type': 'multipart/form-data' },
+          onUploadProgress: (e) => {
+            if (e.total) setProgress(Math.round((e.loaded / e.total) * 100));
+          },
+        });
+        toast.success('Video uploaded!');
+        reset();
+        onCreated({ id: projectId });
+        return;
+      }
+
+      // Step 3: Confirm upload to backend
+      await api.post(`/projects/${projectId}/confirm-upload`);
 
       toast.success('Video uploaded!');
       reset();
-      onCreated(data.project);
+      onCreated({ id: projectId });
     } catch (err: unknown) {
       const message =
         (err as { response?: { data?: { error?: string } } })?.response?.data?.error ||
-        'Upload failed';
+        (err instanceof Error ? err.message : 'Upload failed');
       toast.error(message);
     } finally {
       setUploading(false);
@@ -181,7 +212,7 @@ export default function UploadModal({ open, onClose, onCreated }: UploadModalPro
                 <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-emerald-500/10 border border-emerald-500/20">
                   <FileVideo className="h-6 w-6 text-emerald-400" />
                 </div>
-                <p className="mt-3 text-sm font-medium text-emerald-400">{file.name}</p>
+                <p className="mt-3 text-sm font-medium text-emerald-400 max-w-full truncate px-4">{file.name}</p>
                 <p className="mt-0.5 text-xs text-emerald-400/60">
                   {(file.size / (1024 * 1024)).toFixed(1)} MB
                 </p>

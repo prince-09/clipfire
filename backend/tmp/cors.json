@@ -1,0 +1,8 @@
+[
+    {
+      "origin": ["http://localhost:3000", "https://clipfire.molevia.com"],
+      "method": ["GET", "PUT"],
+      "responseHeader": ["Content-Type"],
+      "maxAgeSeconds": 3600
+    }
+  ]

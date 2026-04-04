@@ -338,9 +338,15 @@ export default function ExportModal({ projectId, clips, videoPath, initialFormat
     }
   };
 
-  const handleDownload = () => {
+  const handleDownload = async () => {
     if (clips.length === 1 && lastExportId) {
-      window.open(`${API_URL}/api/exports/download/${lastExportId}`, '_blank');
+      // Fetch signed URL, then open it
+      try {
+        const { data } = await api.get(`/exports/download/${lastExportId}`);
+        window.open(data.url, '_blank');
+      } catch {
+        toast.error('Failed to get download link');
+      }
     } else {
       window.open(`${API_URL}/api/exports/download-zip/${projectId}`, '_blank');
     }
