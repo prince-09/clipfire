@@ -4,7 +4,7 @@ import path from 'path';
 import fs from 'fs';
 import crypto from 'crypto';
 import { logger } from '../lib/logger.js';
-import { UPLOADS_DIR } from '../lib/upload.js';
+import { getTempDir } from '../lib/storage.js';
 
 // Resolve dirs relative to project root (works in both tsx dev and compiled dist)
 const FONTS_DIR = path.resolve(process.cwd(), 'fonts');
@@ -46,7 +46,7 @@ export async function isDrawTextAvailable(): Promise<boolean> {
 
 export async function extractAudio(videoPath: string, maxDurationSeconds?: number): Promise<string> {
   const outputName = `${Date.now()}-${crypto.randomBytes(4).toString('hex')}.wav`;
-  const outputPath = path.join(UPLOADS_DIR, outputName);
+  const outputPath = path.join(getTempDir(), outputName);
 
   // Extract audio as mono 16kHz WAV (optimal for Whisper)
   const durationFlag = maxDurationSeconds ? `-t ${maxDurationSeconds}` : '';
@@ -87,7 +87,7 @@ export async function compressAudioForWhisper(wavPath: string): Promise<string> 
   }
 
   const outputName = `${Date.now()}-${crypto.randomBytes(4).toString('hex')}.mp3`;
-  const outputPath = path.join(UPLOADS_DIR, outputName);
+  const outputPath = path.join(getTempDir(), outputName);
 
   await execAsync(
     `ffmpeg -i "${wavPath}" -ar 16000 -ac 1 -b:a 32k "${outputPath}" -y`,
@@ -121,7 +121,7 @@ export async function splitAudioIfNeeded(audioPath: string, maxSizeBytes: number
   for (let i = 0; i < numChunks; i++) {
     const start = i * chunkDuration;
     const chunkName = `${Date.now()}-chunk${i}-${crypto.randomBytes(4).toString('hex')}.mp3`;
-    const chunkPath = path.join(UPLOADS_DIR, chunkName);
+    const chunkPath = path.join(getTempDir(), chunkName);
 
     await execAsync(
       `ffmpeg -i "${audioPath}" -ss ${start} -t ${chunkDuration} -ar 16000 -ac 1 -b:a 32k "${chunkPath}" -y`,

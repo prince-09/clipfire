@@ -604,7 +604,7 @@ export default function ProjectPage() {
         <ExportModal
           projectId={project.id}
           clips={selectedClips}
-          videoPath={project.videoPath}
+          videoUrl={project.videoUrl}
           initialFormat={previewFormat !== 'original' ? previewFormat : '9:16'}
           initialCaptionStyle={previewCaptionStyle}
           initialCaptionPosition={previewCaptionPos}

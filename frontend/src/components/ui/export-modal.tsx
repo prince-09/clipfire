@@ -18,7 +18,7 @@ interface ExportClip {
 interface ExportModalProps {
   projectId: string;
   clips: ExportClip[];
-  videoPath: string | null;
+  videoUrl: string | null;
   initialFormat?: string;
   initialCaptionStyle?: string | null;
   initialCaptionPosition?: string;
@@ -237,7 +237,7 @@ function CaptionPreview({ style, position, transcript, fontClass }: { style: str
   );
 }
 
-export default function ExportModal({ projectId, clips, videoPath, initialFormat, initialCaptionStyle, initialCaptionPosition, onClose, onExported }: ExportModalProps) {
+export default function ExportModal({ projectId, clips, videoUrl, initialFormat, initialCaptionStyle, initialCaptionPosition, onClose, onExported }: ExportModalProps) {
   const [format, setFormat] = useState<string>(initialFormat || '9:16');
   const [captionStyle, setCaptionStyle] = useState<string | null>(initialCaptionStyle ?? 'classic');
   const [captionPosition, setCaptionPosition] = useState<string>(initialCaptionPosition || 'bottom');
@@ -287,9 +287,7 @@ export default function ExportModal({ projectId, clips, videoPath, initialFormat
     }
   }, [musicVolume, playingTrack]);
 
-  const videoSrc = videoPath
-    ? `${API_URL}/uploads/${videoPath.split('/').pop()}`
-    : null;
+  const videoSrc = videoUrl || null;
 
   const previewDimensions: Record<string, { width: number; height: number }> = {
     '9:16': { width: 200, height: 356 },
