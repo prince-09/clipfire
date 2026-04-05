@@ -1,7 +1,17 @@
-'use client';
-
+import { Metadata } from 'next';
 import Link from 'next/link';
 import { Sparkles, Check, Zap, ArrowRight, Clock, Film, Download } from 'lucide-react';
+
+export const metadata: Metadata = {
+  title: 'Pricing — $5/mo for 150 Minutes of AI Video Repurposing',
+  description: 'Simple, transparent pricing. $5/month for 150 minutes of AI-powered video repurposing. Auto vertical crop, caption burn-in, viral moment detection for TikTok, Reels, and Shorts.',
+  openGraph: {
+    title: 'Clipfire Pricing — $5/mo for 150 Minutes',
+    description: 'Simple, transparent pricing. $5/month for 150 minutes of AI-powered video repurposing.',
+    url: 'https://clipfire.app/pricing',
+    type: 'website',
+  },
+};
 
 const features = [
   '150 minutes of video processing',

@@ -26,8 +26,71 @@ const pacifico = Pacifico({ subsets: ["latin"], variable: "--font-pacifico", wei
 const oswald = Oswald({ subsets: ["latin"], variable: "--font-oswald", weight: ["400", "700"] });
 
 export const metadata: Metadata = {
-  title: "Clipfire — Turn Videos Into Viral Clips",
-  description: "Upload a long video, get 30 viral short clips in minutes",
+  title: {
+    default: "Clipfire — AI Video Repurposing | Turn Long Videos Into Viral Shorts",
+    template: "%s | Clipfire",
+  },
+  description: "Upload a long video, get 30 viral short clips in minutes. AI-powered video repurposing for TikTok, Reels, and YouTube Shorts. Auto vertical crop, caption burn-in, and viral moment detection.",
+  keywords: [
+    "AI video repurposing",
+    "video to shorts converter",
+    "long video to short clips",
+    "auto video clipper",
+    "viral clip detector",
+    "podcast to shorts",
+    "YouTube to TikTok",
+    "auto caption video",
+    "vertical video crop",
+    "AI video editor",
+    "content repurposing tool",
+    "video clipping software",
+    "TikTok clip maker",
+    "Reels video creator",
+    "YouTube Shorts maker",
+  ],
+  authors: [{ name: "Clipfire" }],
+  creator: "Clipfire",
+  publisher: "Clipfire",
+  metadataBase: new URL("https://clipfire.app"),
+  alternates: {
+    canonical: "/",
+  },
+  openGraph: {
+    type: "website",
+    locale: "en_US",
+    url: "https://clipfire.app",
+    title: "Clipfire — AI Video Repurposing | Turn Long Videos Into Viral Shorts",
+    description: "Upload a long video, get 30 viral short clips in minutes. AI-powered video repurposing for TikTok, Reels, and YouTube Shorts.",
+    siteName: "Clipfire",
+    images: [
+      {
+        url: "/opengraph-image.png",
+        width: 1200,
+        height: 630,
+        alt: "Clipfire - AI Video Repurposing Tool",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Clipfire — AI Video Repurposing",
+    description: "Upload a long video, get 30 viral short clips in minutes. AI-powered video repurposing for TikTok, Reels, and YouTube Shorts.",
+    images: ["/twitter-image.png"],
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      "max-video-preview": -1,
+      "max-image-preview": "large",
+      "max-snippet": -1,
+    },
+  },
+  verification: {
+    google: "your-google-verification-code",
+  },
 };
 
 export default function RootLayout({
