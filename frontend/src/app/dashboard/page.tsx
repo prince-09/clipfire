@@ -1,5 +1,4 @@
-'use client';
-
+import { Metadata } from 'next';
 import { useState, useEffect, useCallback } from 'react';
 import { api } from '@/lib/api';
 import Link from 'next/link';
@@ -9,6 +8,14 @@ import toast, { Toaster } from 'react-hot-toast';
 import UploadModal from '@/components/ui/upload-modal';
 import { AuthGuard } from '@/components/ui/auth-guard';
 import { useAuth } from '@/hooks/use-auth';
+
+export const metadata: Metadata = {
+  title: 'Dashboard',
+  robots: {
+    index: false,
+    follow: false,
+  },
+};
 
 interface Project {
   id: string;

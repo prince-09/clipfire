@@ -91,6 +91,9 @@ export const metadata: Metadata = {
   verification: {
     google: "your-google-verification-code",
   },
+  other: {
+    "rankforge-verification": "e5fb236b-6b32-476f-b4be-93eeb3bd4098",
+  },
 };
 
 export default function RootLayout({
