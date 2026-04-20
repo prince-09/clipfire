@@ -5,6 +5,22 @@ import { Sparkles, ArrowLeft } from 'lucide-react';
 export const metadata: Metadata = {
   title: 'Privacy Policy',
   description: 'Privacy Policy for Clipfire - AI Video Repurposing Tool. Learn how we collect, use, and protect your data. We value your privacy.',
+  keywords: [
+    'Clipfire privacy policy',
+    'video repurposing data privacy',
+    'Clipfire data protection',
+    'AI video tool privacy',
+    'video upload data security',
+  ],
+  alternates: {
+    canonical: '/privacy',
+  },
+  openGraph: {
+    title: 'Privacy Policy | Clipfire',
+    description: 'Learn how Clipfire collects, uses, and protects your data.',
+    url: 'https://clipfire.app/privacy',
+    type: 'website',
+  },
   robots: {
     index: true,
     follow: true,

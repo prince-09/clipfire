@@ -5,6 +5,22 @@ import { Sparkles, ArrowLeft } from 'lucide-react';
 export const metadata: Metadata = {
   title: 'Terms of Service',
   description: 'Terms of Service for Clipfire - AI Video Repurposing Tool. Understand our subscription terms, content ownership, and user responsibilities.',
+  keywords: [
+    'Clipfire terms of service',
+    'video repurposing terms',
+    'Clipfire user agreement',
+    'AI video tool terms',
+    'content repurposing service terms',
+  ],
+  alternates: {
+    canonical: '/terms',
+  },
+  openGraph: {
+    title: 'Terms of Service | Clipfire',
+    description: 'Understand our subscription terms, content ownership, and user responsibilities.',
+    url: 'https://clipfire.app/terms',
+    type: 'website',
+  },
   robots: {
     index: true,
     follow: true,

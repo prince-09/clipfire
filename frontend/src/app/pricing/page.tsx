@@ -5,11 +5,48 @@ import { Sparkles, Check, Zap, ArrowRight, Clock, Film, Download } from 'lucide-
 export const metadata: Metadata = {
   title: 'Pricing — $5/mo for 150 Minutes of AI Video Repurposing',
   description: 'Simple, transparent pricing. $5/month for 150 minutes of AI-powered video repurposing. Auto vertical crop, caption burn-in, viral moment detection for TikTok, Reels, and Shorts.',
+  keywords: [
+    // Short-tail
+    'video clipper pricing',
+    'AI clipper cost',
+    'repurposing tool price',
+    'short form video pricing',
+    // Long-tail
+    'Clipfire pricing plan',
+    'AI video repurposing cost per month',
+    'cheap video clipping tool subscription',
+    'video to shorts converter pricing',
+    'content repurposing tool monthly plan',
+    'TikTok clip maker affordable price',
+    'auto video clipper cheapest plan',
+    '$5 video repurposing tool',
+    'best budget AI video editor',
+    'how much does video repurposing cost',
+    // Competitor pricing
+    'Opus Clip pricing vs Clipfire',
+    'cheaper than Opus Clip',
+    'Vidyo AI pricing alternative',
+    'Munch pricing comparison',
+    'cheapest AI video clipper 2025',
+    'Opus Clip free alternative',
+    'affordable Kapwing alternative',
+    'Repurpose.io pricing vs Clipfire',
+  ],
+  alternates: {
+    canonical: '/pricing',
+  },
   openGraph: {
     title: 'Clipfire Pricing — $5/mo for 150 Minutes',
     description: 'Simple, transparent pricing. $5/month for 150 minutes of AI-powered video repurposing.',
     url: 'https://clipfire.app/pricing',
     type: 'website',
+    images: [{ url: '/opengraph-image.png', width: 1200, height: 630, alt: 'Clipfire Pricing' }],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Clipfire Pricing — $5/mo for 150 Minutes',
+    description: 'Simple, transparent pricing. $5/month for 150 minutes of AI-powered video repurposing.',
+    images: ['/twitter-image.png'],
   },
 };
 

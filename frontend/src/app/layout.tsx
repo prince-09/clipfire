@@ -32,21 +32,51 @@ export const metadata: Metadata = {
   },
   description: "Upload a long video, get 30 viral short clips in minutes. AI-powered video repurposing for TikTok, Reels, and YouTube Shorts. Auto vertical crop, caption burn-in, and viral moment detection.",
   keywords: [
-    "AI video repurposing",
-    "video to shorts converter",
-    "long video to short clips",
-    "auto video clipper",
-    "viral clip detector",
-    "podcast to shorts",
-    "YouTube to TikTok",
-    "auto caption video",
-    "vertical video crop",
+    // Short-tail
+    "video repurposing",
     "AI video editor",
-    "content repurposing tool",
-    "video clipping software",
-    "TikTok clip maker",
-    "Reels video creator",
-    "YouTube Shorts maker",
+    "video clipper",
+    "clip generator",
+    "short form video",
+    "video to shorts",
+    "content repurposing",
+    "auto captions",
+    "vertical video",
+    "viral clips",
+    // Long-tail
+    "AI video repurposing tool",
+    "video to shorts converter",
+    "long video to short clips automatically",
+    "auto video clipper with captions",
+    "viral clip detector AI",
+    "podcast to shorts converter",
+    "YouTube to TikTok converter",
+    "auto caption video tool",
+    "vertical video crop tool 9:16",
+    "content repurposing tool for creators",
+    "video clipping software with AI",
+    "TikTok clip maker from long videos",
+    "Reels video creator from YouTube",
+    "YouTube Shorts maker AI",
+    "turn podcast into short clips",
+    "repurpose video content for social media",
+    "AI short form video generator",
+    "auto cut viral moments from video",
+    "bulk video clip exporter",
+    "video highlight reel generator",
+    // Competitor / alternative keywords
+    "Opus Clip alternative",
+    "Vidyo AI alternative",
+    "Munch alternative",
+    "Kapwing alternative",
+    "Descript alternative for clips",
+    "Repurpose.io alternative",
+    "Vizard alternative",
+    "Gling alternative",
+    "cheaper than Opus Clip",
+    "best Opus Clip alternative 2025",
+    "cheap AI video clipper",
+    "affordable video repurposing tool",
   ],
   authors: [{ name: "Clipfire" }],
   creator: "Clipfire",
@@ -96,6 +126,94 @@ export const metadata: Metadata = {
   },
 };
 
+const jsonLd = {
+  "@context": "https://schema.org",
+  "@type": "SoftwareApplication",
+  "name": "Clipfire",
+  "applicationCategory": "MultimediaApplication",
+  "operatingSystem": "Web",
+  "url": "https://clipfire.app",
+  "description": "Upload a long video, get 30 viral short clips in minutes. AI-powered video repurposing for TikTok, Reels, and YouTube Shorts.",
+  "offers": {
+    "@type": "Offer",
+    "price": "5.00",
+    "priceCurrency": "USD",
+    "billingIncrement": 1,
+    "unitCode": "MON",
+  },
+  "featureList": [
+    "AI viral moment detection",
+    "Word-level transcription",
+    "Vertical crop (9:16)",
+    "Caption burn-in with 11 styles",
+    "YouTube URL import",
+    "Batch ZIP export",
+  ],
+};
+
+const faqJsonLd = {
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    {
+      "@type": "Question",
+      "name": "How does the pricing work?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "You get 150 minutes of video processing per month for $5. Minutes are based on the duration of the video you upload — a 10-minute video uses 10 minutes of credit regardless of how many clips are generated.",
+      },
+    },
+    {
+      "@type": "Question",
+      "name": "What happens if processing fails?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Your credits are automatically refunded if the pipeline fails at any step. You only pay for successful processing.",
+      },
+    },
+    {
+      "@type": "Question",
+      "name": "Can I process YouTube videos?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Yes! Just paste any YouTube URL and we download it server-side. No need to download the video yourself first.",
+      },
+    },
+    {
+      "@type": "Question",
+      "name": "What video formats are supported?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "MP4, MOV, AVI, MKV, and WebM. YouTube URLs work too. Maximum file size is 2GB.",
+      },
+    },
+    {
+      "@type": "Question",
+      "name": "How long does processing take?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Typically 3-8 minutes depending on video length. You can close the tab and come back — we'll have your clips ready.",
+      },
+    },
+    {
+      "@type": "Question",
+      "name": "What AI models power Clipfire?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "OpenAI Whisper for transcription (word-level timestamps) and GPT for clip detection, scoring, hook generation, and caption writing.",
+      },
+    },
+    {
+      "@type": "Question",
+      "name": "Can I cancel anytime?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Yes, cancel anytime through Gumroad. Your credits remain active until the end of your billing period.",
+      },
+    },
+  ],
+};
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -104,6 +222,16 @@ export default function RootLayout({
   return (
     <ClerkProvider appearance={{ baseTheme: dark }}>
       <html lang="en">
+        <head>
+          <script
+            type="application/ld+json"
+            dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+          />
+          <script
+            type="application/ld+json"
+            dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }}
+          />
+        </head>
         <body
           className={`${geistSans.variable} ${geistMono.variable} ${inter.variable} ${poppins.variable} ${bangers.variable} ${permanentMarker.variable} ${bebasNeue.variable} ${spaceMono.variable} ${pacifico.variable} ${oswald.variable} antialiased`}
         >

@@ -145,6 +145,9 @@ export default function LandingPage() {
             <Link href="/pricing" className="text-sm font-medium text-muted hover:text-foreground transition-colors">
               Pricing
             </Link>
+            <Link href="/blog" className="text-sm font-medium text-muted hover:text-foreground transition-colors">
+              Blog
+            </Link>
             <Link
               href="/sign-in"
               className="flex items-center gap-2 rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-white transition-all hover:bg-accent-hover hover:shadow-lg hover:shadow-accent/25 active:scale-[0.97]"
@@ -494,6 +497,7 @@ export default function LandingPage() {
           </div>
           <div className="flex items-center gap-6">
             <Link href="/pricing" className="text-xs text-muted/50 hover:text-muted transition-colors">Pricing</Link>
+            <Link href="/blog" className="text-xs text-muted/50 hover:text-muted transition-colors">Blog</Link>
             <Link href="/terms" className="text-xs text-muted/50 hover:text-muted transition-colors">Terms of Service</Link>
             <Link href="/privacy" className="text-xs text-muted/50 hover:text-muted transition-colors">Privacy Policy</Link>
           </div>
