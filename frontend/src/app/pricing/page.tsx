@@ -38,7 +38,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: 'Clipfire Pricing — $5/mo for 150 Minutes',
     description: 'Simple, transparent pricing. $5/month for 150 minutes of AI-powered video repurposing.',
-    url: 'https://clipfire.app/pricing',
+    url: 'https://clipfire.molevia.com/pricing',
     type: 'website',
     images: [{ url: '/opengraph-image.png', width: 1200, height: 630, alt: 'Clipfire Pricing' }],
   },

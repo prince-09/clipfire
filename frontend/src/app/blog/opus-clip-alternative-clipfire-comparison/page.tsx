@@ -21,7 +21,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: 'Opus Clip vs Clipfire — Which AI Clipper Wins?',
     description: 'Side-by-side comparison of Opus Clip and Clipfire for AI video clipping.',
-    url: 'https://clipfire.app/blog/opus-clip-alternative-clipfire-comparison',
+    url: 'https://clipfire.molevia.com/blog/opus-clip-alternative-clipfire-comparison',
     type: 'article',
     images: [{ url: '/opengraph-image.png', width: 1200, height: 630, alt: 'Opus Clip vs Clipfire Comparison' }],
   },

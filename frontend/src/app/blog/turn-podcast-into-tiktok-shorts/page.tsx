@@ -21,7 +21,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: 'How to Turn Your Podcast into TikTok Shorts Automatically',
     description: 'Extract the best moments from your podcast and post them as vertical shorts.',
-    url: 'https://clipfire.app/blog/turn-podcast-into-tiktok-shorts',
+    url: 'https://clipfire.molevia.com/blog/turn-podcast-into-tiktok-shorts',
     type: 'article',
     images: [{ url: '/opengraph-image.png', width: 1200, height: 630, alt: 'Turn Podcast into TikTok Shorts' }],
   },

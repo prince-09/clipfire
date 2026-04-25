@@ -81,14 +81,14 @@ export const metadata: Metadata = {
   authors: [{ name: "Clipfire" }],
   creator: "Clipfire",
   publisher: "Clipfire",
-  metadataBase: new URL("https://clipfire.app"),
+  metadataBase: new URL("https://clipfire.molevia.com"),
   alternates: {
     canonical: "/",
   },
   openGraph: {
     type: "website",
     locale: "en_US",
-    url: "https://clipfire.app",
+    url: "https://clipfire.molevia.com",
     title: "Clipfire — AI Video Repurposing | Turn Long Videos Into Viral Shorts",
     description: "Upload a long video, get 30 viral short clips in minutes. AI-powered video repurposing for TikTok, Reels, and YouTube Shorts.",
     siteName: "Clipfire",
@@ -132,7 +132,7 @@ const jsonLd = {
   "name": "Clipfire",
   "applicationCategory": "MultimediaApplication",
   "operatingSystem": "Web",
-  "url": "https://clipfire.app",
+  "url": "https://clipfire.molevia.com",
   "description": "Upload a long video, get 30 viral short clips in minutes. AI-powered video repurposing for TikTok, Reels, and YouTube Shorts.",
   "offers": {
     "@type": "Offer",

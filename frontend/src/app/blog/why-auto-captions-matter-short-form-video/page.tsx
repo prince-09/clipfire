@@ -21,7 +21,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: 'Why Auto Captions Are Essential for Short-Form Video in 2025',
     description: 'Videos with captions get 80% more watch time. Here\'s why and how to add them.',
-    url: 'https://clipfire.app/blog/why-auto-captions-matter-short-form-video',
+    url: 'https://clipfire.molevia.com/blog/why-auto-captions-matter-short-form-video',
     type: 'article',
     images: [{ url: '/opengraph-image.png', width: 1200, height: 630, alt: 'Why Auto Captions Matter for Short-Form Video' }],
   },

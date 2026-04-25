@@ -23,7 +23,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: '5 Best AI Video Clipping Tools in 2025 (Compared)',
     description: 'Opus Clip vs Vidyo AI vs Munch vs Kapwing vs Clipfire — which AI clipper wins?',
-    url: 'https://clipfire.app/blog/best-ai-video-clipping-tools-2025',
+    url: 'https://clipfire.molevia.com/blog/best-ai-video-clipping-tools-2025',
     type: 'article',
     images: [{ url: '/opengraph-image.png', width: 1200, height: 630, alt: 'Best AI Video Clipping Tools 2025' }],
   },

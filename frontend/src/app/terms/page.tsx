@@ -18,7 +18,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: 'Terms of Service | Clipfire',
     description: 'Understand our subscription terms, content ownership, and user responsibilities.',
-    url: 'https://clipfire.app/terms',
+    url: 'https://clipfire.molevia.com/terms',
     type: 'website',
   },
   robots: {

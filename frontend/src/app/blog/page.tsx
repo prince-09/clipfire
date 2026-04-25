@@ -17,7 +17,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: 'Clipfire Blog — AI Video Repurposing Tips & Guides',
     description: 'Learn how to repurpose long videos into viral short clips with AI.',
-    url: 'https://clipfire.app/blog',
+    url: 'https://clipfire.molevia.com/blog',
     type: 'website',
     images: [{ url: '/opengraph-image.png', width: 1200, height: 630, alt: 'Clipfire Blog' }],
   },

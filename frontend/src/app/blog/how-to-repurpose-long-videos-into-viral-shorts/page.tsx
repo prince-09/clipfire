@@ -21,7 +21,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: 'How to Repurpose Long Videos into Viral Shorts with AI',
     description: 'Turn a single long-form video into 20+ short clips that actually go viral.',
-    url: 'https://clipfire.app/blog/how-to-repurpose-long-videos-into-viral-shorts',
+    url: 'https://clipfire.molevia.com/blog/how-to-repurpose-long-videos-into-viral-shorts',
     type: 'article',
     images: [{ url: '/opengraph-image.png', width: 1200, height: 630, alt: 'How to Repurpose Long Videos into Viral Shorts' }],
   },

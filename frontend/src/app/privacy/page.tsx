@@ -18,7 +18,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: 'Privacy Policy | Clipfire',
     description: 'Learn how Clipfire collects, uses, and protects your data.',
-    url: 'https://clipfire.app/privacy',
+    url: 'https://clipfire.molevia.com/privacy',
     type: 'website',
   },
   robots: {

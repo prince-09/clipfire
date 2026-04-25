@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://clipfire.app/sitemap.xml
+Sitemap: https://clipfire.molevia.com/sitemap.xml
